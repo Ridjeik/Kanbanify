@@ -106,6 +106,45 @@ describe('DataService', () => {
     expect(card.description).toBe('Test');
   });
 
+  it('should create a card with default medium priority', () => {
+    const card = dataService.createCard('New Card');
+    expect(card.priority).toBe('medium');
+  });
+
+  it('should create a card with specified priority', () => {
+    const card = dataService.createCard('High Priority Task', { 
+      description: 'Important task',
+      priority: 'high'
+    });
+    expect(card.priority).toBe('high');
+    expect(card.title).toBe('High Priority Task');
+  });
+
+  it('should create a card with low priority', () => {
+    const card = dataService.createCard('Low Priority Task', { priority: 'low' });
+    expect(card.priority).toBe('low');
+  });
+
+  it('should create a card with critical priority', () => {
+    const card = dataService.createCard('Critical Task', { priority: 'critical' });
+    expect(card.priority).toBe('critical');
+  });
+
+  it('should create a card with all details including priority', () => {
+    const cardDetails = {
+      description: 'Test description',
+      dueDate: '2025-12-31',
+      tags: [{ label: 'urgent', color: 'red' }],
+      priority: 'high'
+    };
+    const card = dataService.createCard('Complete Task', cardDetails);
+    expect(card.title).toBe('Complete Task');
+    expect(card.description).toBe('Test description');
+    expect(card.dueDate).toBe('2025-12-31');
+    expect(card.tags).toEqual([{ label: 'urgent', color: 'red' }]);
+    expect(card.priority).toBe('high');
+  });
+
   it('should find a card in the board', () => {
     const board = {
       columns: [
