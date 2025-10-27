@@ -146,6 +146,7 @@ export class DataService {
       description: details.description || '',
       dueDate: details.dueDate || null,
       tags: details.tags || [],
+      priority: details.priority || 'medium',
       createdAt: Date.now(),
     };
   }

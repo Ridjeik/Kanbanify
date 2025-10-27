@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Tag as TagIcon, Trash2 } from 'lucide-react';
+import { Calendar, Tag as TagIcon, Trash2, Flag } from 'lucide-react';
 import Modal from './ui/Modal';
 import Input from './ui/Input';
 import Button from './ui/Button';
 import Tag, { getRandomTagColor } from './Tag';
+import Priority, { getPriorityLevels } from './Priority';
 
 /**
  * Modal for viewing and editing card details
@@ -14,6 +15,7 @@ export default function CardModal({ isOpen, onClose, card, onSave, onDelete }) {
     description: '',
     dueDate: '',
     tags: [],
+    priority: 'medium',
   });
   const [newTag, setNewTag] = useState('');
   
@@ -24,6 +26,7 @@ export default function CardModal({ isOpen, onClose, card, onSave, onDelete }) {
         description: card.description || '',
         dueDate: card.dueDate || '',
         tags: card.tags || [],
+        priority: card.priority || 'medium',
       });
     } else {
       setFormData({
@@ -31,6 +34,7 @@ export default function CardModal({ isOpen, onClose, card, onSave, onDelete }) {
         description: '',
         dueDate: '',
         tags: [],
+        priority: 'medium',
       });
     }
   }, [card, isOpen]);
@@ -120,6 +124,30 @@ export default function CardModal({ isOpen, onClose, card, onSave, onDelete }) {
               bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 
               text-gray-900 dark:text-gray-100"
           />
+        </div>
+        
+        {/* Priority */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <Flag size={16} />
+            Priority
+          </label>
+          <div className="flex gap-2">
+            {getPriorityLevels().map((priorityLevel) => (
+              <button
+                key={priorityLevel.value}
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, priority: priorityLevel.value }))}
+                className={`flex-1 px-3 py-2 rounded-lg border-2 transition-all
+                  ${formData.priority === priorityLevel.value
+                    ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-500'
+                  }`}
+              >
+                <Priority level={priorityLevel.value} showLabel={true} size="small" />
+              </button>
+            ))}
+          </div>
         </div>
         
         {/* Tags */}

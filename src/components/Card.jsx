@@ -2,6 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Calendar, GripVertical } from 'lucide-react';
 import Tag from './Tag';
+import Priority from './Priority';
 
 /**
  * Draggable Card component
@@ -62,9 +63,15 @@ export default function Card({ card, onClick }) {
         
         {/* Card content */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2 break-words">
-            {card.title}
-          </h3>
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 break-words flex-1">
+              {card.title}
+            </h3>
+            {/* Priority badge */}
+            {card.priority && (
+              <Priority level={card.priority} showLabel={false} size="small" />
+            )}
+          </div>
           
           {/* Tags */}
           {card.tags && card.tags.length > 0 && (

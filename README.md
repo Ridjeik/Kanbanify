@@ -8,7 +8,8 @@ A modern, feature-rich Kanban board application built with React, Vite, and Tail
 - **Drag & Drop**: Smooth drag-and-drop functionality powered by @dnd-kit
 - **User Authentication**: Multi-user support with secure login system
 - **Customizable Columns**: Add, rename, and delete columns as needed
-- **Task Cards**: Rich task cards with descriptions, tags, and user assignments
+- **Task Cards**: Rich task cards with descriptions, tags, priorities, and user assignments
+- **Priority Levels**: Assign priorities to tasks (Low, Medium, High, Critical)
 - **Dark Mode**: Toggle between light and dark themes
 - **Local Storage**: All data persists locally in the browser
 - **Board Presets**: Quick-start templates for common workflows
@@ -77,7 +78,9 @@ The application comes with pre-configured demo users. Use any of these credentia
 
 - **Add Column**: Click the "Add Column" button
 - **Add Card**: Click "Add Card" within any column
-- **Edit Card**: Click on any card to view/edit details
+- **Edit Card**: Click on any card to view/edit details, add tags, set priority, and assign due dates
+- **Set Priority**: Choose from Low, Medium, High, or Critical priority levels
+- **Add Tags**: Organize cards with colorful tags
 - **Drag & Drop**: Drag cards between columns or reorder within a column
 - **Delete**: Use the trash icon on cards or columns
 
