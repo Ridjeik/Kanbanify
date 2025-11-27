@@ -1,155 +1,97 @@
-/**
- * Authentication Service
- * Manages user authentication and session
- */
-
-// Simple hash function for password (not production-grade, just for demo)
-const simpleHash = (str) => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return hash.toString(36);
-};
+import { STORAGE_KEYS } from '../utils/constants';
+import { globalStorage } from './core/StorageAdapter';
 
 export class AuthService {
-  constructor() {
-    this.usersKey = 'kanbanify_auth_users';
-    this.sessionKey = 'kanbanify_session';
+  constructor(storageAdapter = globalStorage) {
+    this.storage = storageAdapter;
   }
 
-  /**
-   * Initialize auth system with demo users
-   */
-  initialize() {
-    const users = this.getAllAuthUsers();
-    
-    // Create demo users if none exist
+  _hashPassword(password) {
+    // Simple hash for demo purposes (In production, use a library like bcrypt)
+    let hash = 0;
+    for (let i = 0; i < password.length; i++) {
+      const char = password.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash.toString(36);
+  }
+
+  async initialize() {
+    const users = await this.getAllAuthUsers();
     if (users.length === 0) {
-      this.createAuthUser('admin', 'admin123', 'Admin User', '#3B82F6');
-      this.createAuthUser('user1', 'password', 'John Doe', '#10B981');
-      this.createAuthUser('user2', 'password', 'Jane Smith', '#F59E0B');
+      await this.createAuthUser('admin', 'admin123', 'Admin User', '#3B82F6');
+      await this.createAuthUser('user1', 'password', 'John Doe', '#10B981');
     }
   }
 
-  /**
-   * Get all authentication users
-   */
-  getAllAuthUsers() {
-    try {
-      const data = localStorage.getItem(this.usersKey);
-      return data ? JSON.parse(data) : [];
-    } catch (error) {
-      console.error('Error reading auth users:', error);
-      return [];
-    }
+  async getAllAuthUsers() {
+    return await this.storage.get(STORAGE_KEYS.AUTH_USERS, []);
   }
 
-  /**
-   * Create a new user with authentication
-   */
-  createAuthUser(username, password, displayName, color = '#3B82F6') {
-    try {
-      const users = this.getAllAuthUsers();
-      
-      // Check if username already exists
-      if (users.find(u => u.username === username)) {
-        throw new Error('Username already exists');
-      }
-
-      const newUser = {
-        id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        username,
-        passwordHash: simpleHash(password),
-        name: displayName,
-        color,
-        createdAt: Date.now(),
-      };
-
-      users.push(newUser);
-      localStorage.setItem(this.usersKey, JSON.stringify(users));
-      
-      return newUser;
-    } catch (error) {
-      console.error('Error creating auth user:', error);
-      throw error;
+  async createAuthUser(username, password, displayName, color = '#3B82F6') {
+    const users = await this.getAllAuthUsers();
+    
+    if (users.find(u => u.username === username)) {
+      throw new Error('Username already exists');
     }
+
+    const newUser = {
+      id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      username,
+      passwordHash: this._hashPassword(password),
+      name: displayName,
+      color,
+      createdAt: Date.now(),
+    };
+
+    users.push(newUser);
+    await this.storage.set(STORAGE_KEYS.AUTH_USERS, users);
+    return newUser;
   }
 
-  /**
-   * Authenticate user with username and password
-   */
-  login(username, password) {
-    try {
-      const users = this.getAllAuthUsers();
-      const passwordHash = simpleHash(password);
-      
-      const user = users.find(
-        u => u.username === username && u.passwordHash === passwordHash
-      );
+  async login(username, password) {
+    const users = await this.getAllAuthUsers();
+    const passwordHash = this._hashPassword(password);
+    
+    const user = users.find(
+      u => u.username === username && u.passwordHash === passwordHash
+    );
 
-      if (!user) {
-        return { success: false, error: 'Invalid username or password' };
-      }
-
-      // Create session
-      const session = {
-        userId: user.id,
-        username: user.username,
-        name: user.name,
-        color: user.color,
-        loginTime: Date.now(),
-      };
-
-      localStorage.setItem(this.sessionKey, JSON.stringify(session));
-
-      return { success: true, user: session };
-    } catch (error) {
-      console.error('Error during login:', error);
-      return { success: false, error: 'Login failed' };
+    if (!user) {
+      return { success: false, error: 'Invalid username or password' };
     }
+
+    const session = {
+      userId: user.id,
+      username: user.username,
+      name: user.name,
+      color: user.color,
+      loginTime: Date.now(),
+    };
+
+    await this.storage.set(STORAGE_KEYS.SESSION, session);
+    return { success: true, user: session };
   }
 
-  /**
-   * Logout current user
-   */
-  logout() {
-    try {
-      localStorage.removeItem(this.sessionKey);
-      return true;
-    } catch (error) {
-      console.error('Error during logout:', error);
-      return false;
-    }
+  async logout() {
+    return await this.storage.remove(STORAGE_KEYS.SESSION);
   }
 
-  /**
-   * Get current session
-   */
-  getCurrentSession() {
-    try {
-      const data = localStorage.getItem(this.sessionKey);
-      return data ? JSON.parse(data) : null;
-    } catch (error) {
-      console.error('Error reading session:', error);
-      return null;
-    }
+  async getCurrentSession() {
+    return await this.storage.get(STORAGE_KEYS.SESSION);
   }
 
-  /**
-   * Check if user is authenticated
-   */
-  isAuthenticated() {
-    return this.getCurrentSession() !== null;
+  async isAuthenticated() {
+    const session = await this.getCurrentSession();
+    return session !== null;
   }
 
   /**
    * Get current user info from session
    */
-  getCurrentUser() {
-    const session = this.getCurrentSession();
+  async getCurrentUser() {
+    const session = await this.getCurrentSession();
     if (!session) return null;
 
     return {

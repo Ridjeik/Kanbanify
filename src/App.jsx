@@ -50,14 +50,14 @@ function App() {
     }
   }, [currentUser, dataService]);
 
-  const initializeAuth = () => {
+  const initializeAuth = async () => {
     setIsLoading(true);
     
     // Initialize auth system with demo users
-    authService.initialize();
+    await authService.initialize();
     
     // Check if user is already logged in
-    const session = authService.getCurrentSession();
+    const session = await authService.getCurrentSession();
     if (session) {
       setCurrentUser({
         id: session.userId,
@@ -71,7 +71,7 @@ function App() {
   };
 
   const handleLogin = async (username, password) => {
-    const result = authService.login(username, password);
+    const result = await authService.login(username, password);
     
     if (result.success) {
       setCurrentUser({
@@ -86,8 +86,8 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await authService.logout();
     setIsAuthenticated(false);
     setCurrentUser(null);
     setBoards([]);
