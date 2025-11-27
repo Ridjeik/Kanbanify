@@ -1,152 +1,100 @@
-import { LocalStorageService } from './localStorageService';
+import { STORAGE_KEYS } from '../utils/constants';
+import { globalStorage } from './core/StorageAdapter';
+import { validateString } from '../utils/validators';
 
-/**
- * Data service that provides business logic and uses the storage service
- * This is where you'd add validation, transformations, etc.
- * Supports user-scoped data
- */
 export class DataService {
-  constructor(userId = null, storageService = null) {
+  constructor(userId = null, storageAdapter = globalStorage) {
     this.userId = userId;
-    this.storageService = storageService || new LocalStorageService(userId);
+    this.storage = storageAdapter;
   }
 
-  /**
-   * Set the current user ID and update storage accordingly
-   * @param {string} userId - The user ID
-   */
-  setUserId(userId) {
-    this.userId = userId;
-    if (this.storageService.setUserId) {
-      this.storageService.setUserId(userId);
-    }
+  get _boardStorageKey() {
+    return this.userId 
+      ? `${STORAGE_KEYS.BOARDS_PREFIX}${this.userId}` 
+      : `${STORAGE_KEYS.BOARDS_PREFIX}global`;
   }
 
-  /**
-   * Generate a unique ID
-   * @returns {string} A unique ID
-   */
-  generateId() {
+  _generateId() {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  /**
-   * Get or create the default board for the current user
-   * @returns {Promise<Object>} The board object
-   */
-  async getOrCreateBoard() {
-    const boardId = `default-board-${this.userId || 'global'}`;
-    let board = await this.storageService.getBoard(boardId);
-    
-    if (!board) {
-      board = {
-        id: boardId,
-        name: 'My Kanban Board',
-        columns: [],
-        createdAt: Date.now(),
-      };
-      await this.storageService.saveBoard(board);
-    }
-    
+  async getAllBoards() {
+    const boardsMap = await this.storage.get(this._boardStorageKey, {});
+    return Object.values(boardsMap).sort((a, b) => a.createdAt - b.createdAt);
+  }
+
+  async getBoard(boardId) {
+    const boardsMap = await this.storage.get(this._boardStorageKey, {});
+    return boardsMap[boardId] || null;
+  }
+
+  async saveBoard(board) {
+    const boardsMap = await this.storage.get(this._boardStorageKey, {});
+    boardsMap[board.id] = board;
+    await this.storage.set(this._boardStorageKey, boardsMap);
     return board;
   }
 
-  /**
-   * Get all boards
-   * @returns {Promise<Array>} Array of all boards
-   */
-  async getAllBoards() {
-    const boardsObject = await this.storageService.getAllBoards();
-    return Object.values(boardsObject).sort((a, b) => a.createdAt - b.createdAt);
+  async deleteBoard(boardId) {
+    const boardsMap = await this.storage.get(this._boardStorageKey, {});
+    if (boardsMap[boardId]) {
+      delete boardsMap[boardId];
+      await this.storage.set(this._boardStorageKey, boardsMap);
+      return true;
+    }
+    return false;
   }
 
-  /**
-   * Get a specific board by ID
-   * @param {string} boardId - The board ID
-   * @returns {Promise<Object|null>} The board object or null
-   */
-  async getBoard(boardId) {
-    return await this.storageService.getBoard(boardId);
-  }
-
-  /**
-   * Create a new board
-   * @param {string} name - The board name
-   * @returns {Promise<Object>} The created board
-   */
   async createBoard(name) {
+    // Guard Clause: Fail Fast
+    validateString(name, 'Board Name');
+
     const board = {
-      id: this.generateId(),
-      name: name || 'New Board',
+      id: this._generateId(),
+      name: name.trim(),
       columns: [],
       createdAt: Date.now(),
     };
-    await this.storageService.saveBoard(board);
-    return board;
+    return await this.saveBoard(board);
   }
 
-  /**
-   * Update board name
-   * @param {string} boardId - The board ID
-   * @param {string} name - The new board name
-   * @returns {Promise<Object|null>} The updated board or null
-   */
   async updateBoardName(boardId, name) {
-    const board = await this.storageService.getBoard(boardId);
+    validateString(name, 'Board Name');
+    
+    const board = await this.getBoard(boardId);
     if (board) {
-      board.name = name;
-      await this.storageService.saveBoard(board);
-      return board;
+      board.name = name.trim();
+      return await this.saveBoard(board);
     }
     return null;
   }
 
-  /**
-   * Delete a board
-   * @param {string} boardId - The board ID to delete
-   * @returns {Promise<boolean>} True if deleted successfully
-   */
-  async deleteBoard(boardId) {
-    return await this.storageService.deleteBoard(boardId);
-  }
-
-  /**
-   * Save the board
-   * @param {Object} board - The board to save
-   * @returns {Promise<Object>} The saved board
-   */
-  async saveBoard(board) {
-    return await this.storageService.saveBoard(board);
-  }
-
-  /**
-   * Add a new column
-   * @param {Object} board - The board
-   * @param {string} title - The column title
-   * @returns {Object} The new column
-   */
   createColumn(title) {
+    validateString(title, 'Column Title');
     return {
-      id: this.generateId(),
-      title,
+      id: this._generateId(),
+      title: title.trim(),
       cards: [],
     };
   }
 
-  /**
-   * Create a new card
-   * @param {string} title - The card title
-   * @param {Object} details - Additional card details
-   * @returns {Object} The new card
-   */
   createCard(title, details = {}) {
+    validateString(title, 'Card Title');
+
+    const { 
+      description = '', 
+      dueDate = null, 
+      tags = [], 
+      priority = 'medium' 
+    } = details;
+
     return {
-      id: this.generateId(),
-      title,
-      description: details.description || '',
-      dueDate: details.dueDate || null,
-      tags: details.tags || [],
-      priority: details.priority || 'medium',
+      id: this._generateId(),
+      title: title.trim(),
+      description,
+      dueDate,
+      tags,
+      priority,
       createdAt: Date.now(),
     };
   }
