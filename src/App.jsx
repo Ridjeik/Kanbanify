@@ -153,7 +153,7 @@ function App() {
       const newBoard = await dataService.createBoard(name);
       
       // Add preset columns if provided
-      if (preset && preset.columns) {
+      if (preset?.columns) {
         preset.columns.forEach(columnTitle => {
           const column = dataService.createColumn(columnTitle);
           newBoard.columns.push(column);

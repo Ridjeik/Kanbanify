@@ -22,7 +22,7 @@ export class DataService {
 
   async getBoard(boardId) {
     const boardsMap = await this.storage.get(this._boardStorageKey, {});
-    return boardsMap[boardId] || null;
+    return boardsMap[boardId] ?? null;
   }
 
   async saveBoard(board) {

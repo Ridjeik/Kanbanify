@@ -30,11 +30,12 @@ export class UserService {
 
   async setCurrentUser(userId) {
     const user = await this.getUserById(userId);
-    if (user) {
-      await this.storage.set(STORAGE_KEYS.CURRENT_USER, userId);
-      return true;
+    if (!user) {
+      return false;
     }
-    return false;
+    
+    await this.storage.set(STORAGE_KEYS.CURRENT_USER, userId);
+    return true;
   }
 
   async createUser(name, color = null) {
@@ -78,14 +79,17 @@ export class UserService {
 
   async initialize() {
     let currentUser = await this.getCurrentUser();
-    if (!currentUser) {
-      const users = await this.getAllUsers();
-      if (users.length > 0) {
-        await this.setCurrentUser(users[0].id);
-        currentUser = users[0];
-      }
+    if (currentUser) {
+      return currentUser;
     }
-    return currentUser;
+
+    const users = await this.getAllUsers();
+    if (users.length > 0) {
+      await this.setCurrentUser(users[0].id);
+      return users[0];
+    }
+    
+    return null;
   }
 }
 

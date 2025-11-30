@@ -34,7 +34,7 @@ export class AuthService {
   async createAuthUser(username, password, displayName, color = '#3B82F6') {
     const users = await this.getAllAuthUsers();
     
-    if (users.find(u => u.username === username)) {
+    if (users.some(u => u.username === username)) {
       throw new ServiceError('Username already exists', ERROR_CODES.DUPLICATE_USER);
     }
 
