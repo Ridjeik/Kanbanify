@@ -14,9 +14,9 @@ export const THEMES = {
 export class ThemeService {
   /**
    * Get the current theme from localStorage
-   * @returns {string} The current theme ('light' or 'dark')
+   * @returns {Promise<string>} The current theme ('light' or 'dark')
    */
-  getTheme() {
+  async getTheme() {
     try {
       const savedTheme = localStorage.getItem(THEME_KEY);
       // Default to dark theme if not set
@@ -30,9 +30,9 @@ export class ThemeService {
   /**
    * Set the theme in localStorage
    * @param {string} theme - The theme to set ('light' or 'dark')
-   * @returns {boolean} True if successful
+   * @returns {Promise<boolean>} True if successful
    */
-  setTheme(theme) {
+  async setTheme(theme) {
     try {
       if (theme !== THEMES.LIGHT && theme !== THEMES.DARK) {
         console.error('Invalid theme:', theme);
@@ -62,21 +62,21 @@ export class ThemeService {
 
   /**
    * Toggle between light and dark themes
-   * @returns {string} The new theme
+   * @returns {Promise<string>} The new theme
    */
-  toggleTheme() {
-    const currentTheme = this.getTheme();
+  async toggleTheme() {
+    const currentTheme = await this.getTheme();
     const newTheme = currentTheme === THEMES.LIGHT ? THEMES.DARK : THEMES.LIGHT;
-    this.setTheme(newTheme);
+    await this.setTheme(newTheme);
     return newTheme;
   }
 
   /**
    * Initialize the theme on app startup
-   * @returns {string} The current theme
+   * @returns {Promise<string>} The current theme
    */
-  initialize() {
-    const theme = this.getTheme();
+  async initialize() {
+    const theme = await this.getTheme();
     this.applyTheme(theme);
     return theme;
   }

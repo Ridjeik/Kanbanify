@@ -1,5 +1,7 @@
-import { STORAGE_KEYS } from '../utils/constants';
+import { STORAGE_KEYS, HASH_PARAMS } from '../utils/constants';
 import { globalStorage } from './core/StorageAdapter';
+import { generateUserId } from '../utils/idGenerator';
+import { ServiceError, ERROR_CODES } from './core/ServiceError';
 
 export class AuthService {
   constructor(storageAdapter = globalStorage) {
@@ -11,10 +13,10 @@ export class AuthService {
     let hash = 0;
     for (let i = 0; i < password.length; i++) {
       const char = password.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = ((hash << HASH_PARAMS.SHIFT) - hash) + char;
       hash = hash & hash;
     }
-    return hash.toString(36);
+    return hash.toString(HASH_PARAMS.RADIX);
   }
 
   async initialize() {
@@ -33,11 +35,11 @@ export class AuthService {
     const users = await this.getAllAuthUsers();
     
     if (users.find(u => u.username === username)) {
-      throw new Error('Username already exists');
+      throw new ServiceError('Username already exists', ERROR_CODES.DUPLICATE_USER);
     }
 
     const newUser = {
-      id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUserId(),
       username,
       passwordHash: this._hashPassword(password),
       name: displayName,
@@ -88,18 +90,28 @@ export class AuthService {
   }
 
   /**
-   * Get current user info from session
+   * Build user object from session data
+   * @private
+   * @param {Object} session - The session object
+   * @returns {Object} User object
    */
-  async getCurrentUser() {
-    const session = await this.getCurrentSession();
-    if (!session) return null;
-
+  _buildUserFromSession(session) {
     return {
       id: session.userId,
       name: session.name,
       color: session.color,
       username: session.username,
     };
+  }
+
+  /**
+   * Get current user info from session
+   */
+  async getCurrentUser() {
+    const session = await this.getCurrentSession();
+    if (!session) return null;
+
+    return this._buildUserFromSession(session);
   }
 }
 

@@ -6,6 +6,8 @@ import Login from './components/Login';
 import { createDataService } from './services/dataService';
 import { authService } from './services/authService';
 import { themeService, THEMES } from './services/themeService';
+import { mapSessionToUser } from './utils/userMapper';
+import { buildUserLastBoardKey } from './utils/storageKeyBuilder';
 import './App.css';
 
 function App() {
@@ -34,8 +36,11 @@ function App() {
 
   // Initialize theme on mount
   useEffect(() => {
-    const currentTheme = themeService.initialize();
-    setTheme(currentTheme);
+    const initTheme = async () => {
+      const currentTheme = await themeService.initialize();
+      setTheme(currentTheme);
+    };
+    initTheme();
   }, []);
 
   // Check authentication on mount
@@ -59,11 +64,7 @@ function App() {
     // Check if user is already logged in
     const session = await authService.getCurrentSession();
     if (session) {
-      setCurrentUser({
-        id: session.userId,
-        name: session.name,
-        color: session.color,
-      });
+      setCurrentUser(mapSessionToUser(session));
       setIsAuthenticated(true);
     }
     
@@ -74,11 +75,7 @@ function App() {
     const result = await authService.login(username, password);
     
     if (result.success) {
-      setCurrentUser({
-        id: result.user.userId,
-        name: result.user.name,
-        color: result.user.color,
-      });
+      setCurrentUser(mapSessionToUser(result.user));
       setIsAuthenticated(true);
       setLoginError(null);
     } else {
@@ -95,8 +92,8 @@ function App() {
     // Theme persists across logout - no need to reset
   };
 
-  const handleToggleTheme = () => {
-    const newTheme = themeService.toggleTheme();
+  const handleToggleTheme = async () => {
+    const newTheme = await themeService.toggleTheme();
     setTheme(newTheme);
   };
 
@@ -111,7 +108,7 @@ function App() {
     
     if (allBoards.length > 0) {
       // Try to restore last active board from localStorage (per user)
-      const lastBoardId = localStorage.getItem(`kanbanify_last_board_${currentUser.id}`);
+      const lastBoardId = localStorage.getItem(buildUserLastBoardKey(currentUser.id));
       const lastBoard = allBoards.find(b => b.id === lastBoardId);
       setCurrentBoard(lastBoard || allBoards[0]);
     } else {
@@ -125,7 +122,7 @@ function App() {
   const handleSelectBoard = (board) => {
     setCurrentBoard(board);
     if (currentUser) {
-      localStorage.setItem(`kanbanify_last_board_${currentUser.id}`, board.id);
+      localStorage.setItem(buildUserLastBoardKey(currentUser.id), board.id);
     }
   };
 
@@ -167,7 +164,7 @@ function App() {
       setBoards([...boards, newBoard]);
       setCurrentBoard(newBoard);
       if (currentUser) {
-        localStorage.setItem(`kanbanify_last_board_${currentUser.id}`, newBoard.id);
+        localStorage.setItem(buildUserLastBoardKey(currentUser.id), newBoard.id);
       }
     }
   };
@@ -185,9 +182,9 @@ function App() {
         const newCurrent = updatedBoards[0] || null;
         setCurrentBoard(newCurrent);
         if (newCurrent && currentUser) {
-          localStorage.setItem(`kanbanify_last_board_${currentUser.id}`, newCurrent.id);
+          localStorage.setItem(buildUserLastBoardKey(currentUser.id), newCurrent.id);
         } else if (currentUser) {
-          localStorage.removeItem(`kanbanify_last_board_${currentUser.id}`);
+          localStorage.removeItem(buildUserLastBoardKey(currentUser.id));
         }
       }
     }

@@ -17,3 +17,8 @@ export const DEFAULT_COLORS = [
   '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'
 ];
 
+export const HASH_PARAMS = {
+  SHIFT: 5,
+  RADIX: 36,
+};
+

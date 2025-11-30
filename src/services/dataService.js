@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from '../utils/constants';
 import { globalStorage } from './core/StorageAdapter';
 import { validateString } from '../utils/validators';
+import { generateBoardId } from '../utils/idGenerator';
 
 export class DataService {
   constructor(userId = null, storageAdapter = globalStorage) {
@@ -12,10 +13,6 @@ export class DataService {
     return this.userId 
       ? `${STORAGE_KEYS.BOARDS_PREFIX}${this.userId}` 
       : `${STORAGE_KEYS.BOARDS_PREFIX}global`;
-  }
-
-  _generateId() {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   async getAllBoards() {
@@ -50,7 +47,7 @@ export class DataService {
     validateString(name, 'Board Name');
 
     const board = {
-      id: this._generateId(),
+      id: generateBoardId(),
       name: name.trim(),
       columns: [],
       createdAt: Date.now(),
@@ -72,7 +69,7 @@ export class DataService {
   createColumn(title) {
     validateString(title, 'Column Title');
     return {
-      id: this._generateId(),
+      id: generateBoardId(),
       title: title.trim(),
       cards: [],
     };
@@ -89,7 +86,7 @@ export class DataService {
     } = details;
 
     return {
-      id: this._generateId(),
+      id: generateBoardId(),
       title: title.trim(),
       description,
       dueDate,

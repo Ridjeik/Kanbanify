@@ -1,6 +1,7 @@
 import { STORAGE_KEYS, DEFAULT_COLORS } from '../utils/constants';
 import { globalStorage } from './core/StorageAdapter';
 import { validateString } from '../utils/validators';
+import { generateUserId } from '../utils/idGenerator';
 
 // Pure helper function for color assignment
 const getNextUserColor = (userCount) => {
@@ -10,10 +11,6 @@ const getNextUserColor = (userCount) => {
 export class UserService {
   constructor(storageAdapter = globalStorage) {
     this.storage = storageAdapter;
-  }
-
-  _generateId() {
-    return `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   async getAllUsers() {
@@ -48,7 +45,7 @@ export class UserService {
     const assignedColor = color || getNextUserColor(users.length);
 
     const newUser = {
-      id: this._generateId(),
+      id: generateUserId(),
       name: name.trim(),
       color: assignedColor,
       createdAt: Date.now(),
